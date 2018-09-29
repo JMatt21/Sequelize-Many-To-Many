@@ -45,16 +45,25 @@ const seed = () => {
   });
   return sync().then(() => {
     return Promise.all([
-      db.Products.create({ name: 'Tennis Racket' }),
+      db.Products.create({ name: 'Tennis Racket' }), //0
       db.Products.create({ name: 'Baseball Bat' }),
       db.Categories.create({ name: 'Sports' }),
-      db.Categories.create({ name: 'Excercise' }),
+      db.Categories.create({ name: 'Excercise' }), //3
+      db.Products.create({ name: 'Balls'}),
+      db.Products.create({ name: 'Base Ball'}),
+      db.Products.create({ name: 'Basket Ball'}), //6
+      db.Products.create({ name: 'Foot Ball'})
     ])
       .then(result => {
         return Promise.all([
           db.product_category.create({ ProductId: result[0].id, CategoryId: result[2].id }),
           db.product_category.create({ ProductId: result[1].id, CategoryId: result[3].id }),
-          db.product_category.create({ ProductId: result[1].id, CategoryId: result[2].id })
+          db.product_category.create({ ProductId: result[1].id, CategoryId: result[2].id }),
+          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[5].id}),
+          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[6].id}),
+          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[7].id}),
+          db.subproduct.create({ ProductId: result[5].id, SubproductId: result[6].id}),
+          db.subproduct.create({ ProductId: result[5].id, SubproductId: result[7].id}),
         ]);
       });
   })
@@ -67,20 +76,21 @@ const sync = () => {
 seed()
   .then(() => console.log('synced'))
   .then(() => {
-    db.Product.findAll({
+    db.Products.findOne({
+      where: {id: 4},
       include: [{
-        model: db.product_category,
+        model: db.subproduct,
         include: [{
-          model: db.Categories,
-          where: { name: 'Tennis Racket' }
+          model: db.Products,
+          as: 'Subproduct'
         }]
       }]
     }).then(function (dbProduct) {
-      // console.log(dbProduct);
-      dbProduct.forEach(product => {
-        console.log(product.name)
-        product.product_categories.forEach(productCategory =>
-          console.log(productCategory.Category.name));
+      console.log(`This: ${dbProduct.name}`)
+      // console.log(dbProduct.subproducts);
+      dbProduct.subproducts.forEach(sub => {
+        console.log(`Sub: ${sub.Subproduct.name}`);
+        // console.log(sub.Subproduct.name)
       })
     });
   })
