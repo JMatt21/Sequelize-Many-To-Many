@@ -1,9 +1,6 @@
 // Requiring necessary npm packages
 var express = require("express");
 var bodyParser = require("body-parser");
-// var session = require("express-session");
-// Requiring passport as we've configured it
-// var passport = require("./config/passport");
 
 // Setting up port and requiring models for syncing
 var PORT = process.env.PORT || 8080;
@@ -14,29 +11,6 @@ var app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
-// We need to use sessions to keep track of our user's login status
-// app.use(session({ secret: "keyboard cat", resave: true, saveUninitialized: true }));
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-// Requiring our routes
-// require("./routes/html-routes.js")(app);
-// require("./routes/api-routes.js")(app);
-// require("./routes/auth-routes.js")(app);
-// app.get('/', function (req, res) {
-//   db.Products.findAll({
-//     include: [{
-//       model: db.product_category,
-//       include: [db.Categories]
-//     }]
-//   }
-//   ).then(function (ret) {
-//     // console.log(ret[0].product_categories);
-//     ret[0].product_categories.forEach((thing) => {
-//       console.log(thing);
-//     })
-//   });
-// });
 
 // Seeds for our test database
 const seed = () => {
@@ -45,25 +19,33 @@ const seed = () => {
   });
   return sync().then(() => {
     return Promise.all([
-      db.Products.create({ name: 'Tennis Racket' }), //0
-      db.Products.create({ name: 'Baseball Bat' }),
-      db.Categories.create({ name: 'Sports' }),
-      db.Categories.create({ name: 'Excercise' }), //3
-      db.Products.create({ name: 'Balls'}),
-      db.Products.create({ name: 'Base Ball'}),
-      db.Products.create({ name: 'Basket Ball'}), //6
-      db.Products.create({ name: 'Foot Ball'})
+      db.Users.create({ name: "jessie", beginnerSkills: ['javascript', 'python'] }),
+      db.Users.create({ name: "rick" }),
+      db.Users.create({ name: "james" }),
+      db.Users.create({ name: "matt" }),
+      db.Users.create({ name: "mr lonely" })
     ])
       .then(result => {
         return Promise.all([
-          db.product_category.create({ ProductId: result[0].id, CategoryId: result[2].id }),
-          db.product_category.create({ ProductId: result[1].id, CategoryId: result[3].id }),
-          db.product_category.create({ ProductId: result[1].id, CategoryId: result[2].id }),
-          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[5].id}),
-          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[6].id}),
-          db.subproduct.create({ ProductId: result[4].id, SubproductId: result[7].id}),
-          db.subproduct.create({ ProductId: result[5].id, SubproductId: result[6].id}),
-          db.subproduct.create({ ProductId: result[5].id, SubproductId: result[7].id}),
+          db.Matches.create({ UserId: result[0].id, MatchId: result[1].id }),
+          db.Matches.create({ UserId: result[1].id, MatchId: result[0].id }),
+
+          db.Matches.create({ UserId: result[1].id, MatchId: result[2].id }),
+          db.Matches.create({ UserId: result[2].id, MatchId: result[1].id }),
+
+          db.Matches.create({ UserId: result[0].id, MatchId: result[3].id }),
+          db.Matches.create({ UserId: result[3].id, MatchId: result[0].id }),
+
+          db.Messages.create({ message: 'suck a fart out of my ass', UserId: result[0].id, RecipientId: result[1].id }),
+          db.Messages.create({ message: 'no fuck u', UserId: result[1].id, RecipientId: result[0].id }),
+          db.Messages.create({ message: 'wooooooooooooooooooooow', UserId: result[0].id, RecipientId: result[1].id }),
+
+          db.Messages.create({ message: 'dude fucking jessie is weird af', UserId: result[1].id, RecipientId: result[2].id }),
+          db.Messages.create({ message: 'Wow thats pretty strange if i do say so myself', UserId: result[2].id, RecipientId: result[1].id }),
+
+          db.Messages.create({ message: 'hi', UserId: result[0].id, RecipientId: result[3].id }),
+          db.Messages.create({ message: 'hi', UserId: result[3].id, RecipientId: result[0].id }),
+
         ]);
       });
   })
@@ -76,22 +58,127 @@ const sync = () => {
 seed()
   .then(() => console.log('synced'))
   .then(() => {
-    db.Products.findOne({
-      where: {id: 4},
-      include: [{
-        model: db.subproduct,
-        include: [{
-          model: db.Products,
-          as: 'Subproduct'
+
+    // db.Users.findAll({
+    //   include: [
+    //     {
+    //       model: db.Messages,
+    //       include: [{
+    //         model: db.Users,
+    //         as: "Recipient"
+    //       }],
+    //     },
+    //     {
+    //       model: db.Matches,
+    //       include: [{
+    //         model: db.Users,
+    //         include: [{
+    //           model: db.Messages,
+    //         }],
+    //         as: "Match"
+    //       }]
+    //     }]
+    // }).then(function (dbUsers) {
+    //   console.log("----------ARRAY----------");
+    //   // to loop thru array
+    //   dbUsers.forEach(dbUser => {
+    //     const { name, password, email, beginnerSkills, intermediateSkills, advancedSkills } = dbUser;
+    //     console.log(`\nname: ${name}`);
+    //     console.log(`password: ${password}`);
+    //     console.log(`email: ${email}`);
+    //     console.log(`beginnerSkills: ${beginnerSkills}`);
+    //     console.log(`intermediateSkills: ${intermediateSkills}`);
+    //     console.log(`advancedSkills: ${advancedSkills}`);
+
+    //     console.log("-------SENT MESSAGES--------");
+    //     // try { // Try/Catch statement not needed as dbUser.Messages will be an empty array
+    //     dbUser.Messages.forEach(dbMessage => {
+    //       console.log(`${dbMessage.message} to ${dbMessage.Recipient.name}`);
+    //     });
+    //     // } catch (e) {
+    //     // console.log(`User ${name}, has no messages.`);
+    //     // }
+
+    //     console.log("-------RECEIVED MESSAGES--------");
+
+    //     // try { // Same and will also work nicely if the user has no matches because it will also be an empty array
+    //     dbUser.Matches.forEach(dbMatch => {
+    //       dbMatch.Match.Messages.forEach(dbMessage => {
+    //         console.log(`${dbMessage.message} from ${dbMatch.Match.name}`);
+    //       })
+    //     })
+    //     // } catch (e) {
+    //     // console.log(`User ${name}, has been sent no messages.`);
+    //     // }
+    //   });
+    // })
+
+    let id = 2;
+    db.Users.findOne({
+      where: {
+        id: id
+      },
+      include: [
+        {
+          model: db.Messages,
+          include: [{
+            model: db.Users,
+            as: "Recipient"
+          }],
+        },
+        {
+          model: db.Matches,
+          include: [{
+            model: db.Users,
+            include: [{
+              model: db.Messages,
+              where: {
+                RecipientId: id
+              },
+              // this required key means that if a match has sent them no messages,
+              // they will still show up as a match
+              required: false
+            }],
+            as: "Match"
+          }]
         }]
-      }]
-    }).then(function (dbProduct) {
-      console.log(`This: ${dbProduct.name}`)
-      // console.log(dbProduct.subproducts);
-      dbProduct.subproducts.forEach(sub => {
-        console.log(`Sub: ${sub.Subproduct.name}`);
-        // console.log(sub.Subproduct.name)
+    }).then(function (dbUser) {
+      console.log("----------SPECIFIC-----------");
+      // for 1st thing
+      const { name, password, email, beginnerSkills, intermediateSkills, advancedSkills } = dbUser;
+      console.log(`name: ${name}`);
+      console.log(`password: ${password}`);
+      console.log(`email: ${email}`);
+      console.log(`beginnerSkills: ${beginnerSkills}`);
+      console.log(`intermediateSkills: ${intermediateSkills}`);
+      console.log(`advancedSkills: ${advancedSkills}`);
+
+      console.log("--------MATCHES-----------");
+      dbUser.Matches.forEach(dbMatch => {
+        console.log(dbMatch.Match.name);
       })
-    });
+
+      console.log("-------SENT MESSAGES--------");
+      try {
+        dbUser.Messages.forEach(dbMessage => {
+          console.log(`${dbMessage.message} to ${dbMessage.Recipient.name}`);
+        });
+      } catch (e) {
+        console.log(`User ${name}, has no messages.`);
+      }
+
+      console.log("-------RECEIVED MESSAGES--------");
+      // console.log(dbUser.Matches[0].Match.Messages);
+
+      dbUser.Matches.forEach(dbMatch => {
+        if (dbMatch.Match.Messages.length > 0) {
+          dbMatch.Match.Messages.forEach(dbMessage => {
+            console.log(`${dbMessage.message} from ${dbMatch.Match.name}`);
+          })
+        } else {
+          console.log(`no messages from ${dbMatch.Match.name}`);
+        }
+      });
+    })
   })
   .catch(e => console.log(e));
